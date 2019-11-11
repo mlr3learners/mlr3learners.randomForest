@@ -10,6 +10,7 @@ register_mlr3 = function() {
   x = utils::getFromNamespace("mlr_learners", ns = "mlr3")
 
   x$add("classif.randomForest", LearnerClassifRandomForest)
+  x$add("regr.randomForest", LearnerRegrRandomForest)
 }
 
 .onLoad = function(libname, pkgname) {

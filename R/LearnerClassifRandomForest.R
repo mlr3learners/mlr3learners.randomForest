@@ -14,15 +14,15 @@
 #' \url{https://doi.org/10.1023/A:1010933404324}
 #'
 #' @export
-LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", inherit = LearnerClassif, #adapt the name to your learner. For regression learners inherit = LearnerRegr
+LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", inherit = LearnerClassif, 
   public = list(
-    initialize = function(id = "classif.randomForest") { #adapt name
+    initialize = function(id = "classif.randomForest") { 
       super$initialize(
-        id = id, #don't change this
-        packages = "randomForest", # adapt learner package
-        feature_types = c("numeric", "factor", "ordered"), # which feature types are supported? Must be a subset of mlr_reflections$task_feature_types
-        predict_types = c("response", "prob"), # which predict types are supported? See mlr_reflections$learner_predict_types
-        param_set = ParamSet$new( #the defined parameter set, now with the paradox package. See readme.rmd for more details
+        id = id, 
+        packages = "randomForest", 
+        feature_types = c("numeric", "factor", "ordered"),
+        predict_types = c("response", "prob"), 
+        param_set = ParamSet$new(
           params = list(
             ParamInt$new(id = "ntree", default = 500L, lower = 1L, tags = c("train", "predict")),
             ParamInt$new(id = "mtry", lower = 1L, tags = "train"),
@@ -43,12 +43,12 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", inherit = Lea
             ParamLgl$new(id = "keep.inbag", default = FALSE, tags = "train")
           )
         ),
-        param_vals = list(importance = "none"), #we set this here, because the default is FALSE in the randomForest package.
-        properties = c("weights", "twoclass", "multiclass", "importance", "oob_error") #see mlr_reflections$learner_properties
+        properties = c("weights", "twoclass", "multiclass", "importance", "oob_error") 
       )
     },
 
     train_internal = function(task) {
+      if (is.null(self$param_set$values[["importance"]])) self$param_set$values[["importance"]] = "none"
       pars = self$param_set$get_values(tags = "train")
 
       #setting the importance value to logical
@@ -59,8 +59,8 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", inherit = Lea
       }
 
       #get formula, data, classwt, cutoff for the randomForest package
-      f = task$formula() #the formula is available in the task
-      data = task$data() #the data is avail
+      f = task$formula() 
+      data = task$data() 
       levs = levels(data[[task$target_names]])
       n = length(levs)
 
@@ -75,18 +75,17 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", inherit = Lea
       }
       if (is.numeric(cutoff) && length(cutoff) == n && is.null(names(cutoff)))
         names(cutoff) = levs
-      invoke(randomForest::randomForest, formula = f, data = data, classwt = classwt, cutoff = cutoff, .args = pars) #use the invoke function (it's similar to do.call())
+      invoke(randomForest::randomForest, formula = f, data = data, classwt = classwt, cutoff = cutoff, .args = pars)
     },
 
     predict_internal = function(task) {
-      pars = self$param_set$get_values(tags = "predict") #get parameters with tag "predict"
-      newdata = task$data(cols = task$feature_names) #get newdata
-      type = ifelse(self$predict_type == "response", "response", "prob") #this is for the randomForest package
+      pars = self$param_set$get_values(tags = "predict") 
+      newdata = task$data(cols = task$feature_names) 
+      type = ifelse(self$predict_type == "response", "response", "prob")
 
       p = invoke(predict, self$model, newdata = newdata,
         type = type, .args = pars)
 
-      #return a prediction object with PredictionClassif$new() or PredictionRegr$new()
       if (self$predict_type == "response") {
         PredictionClassif$new(task = task, response = p)
       } else {
@@ -94,7 +93,7 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", inherit = Lea
       }
     },
 
-    #add method for importance, if learner supports that. It must return a sorted (decreasing) numerical, named vector.
+    #add method for importance.
     importance = function() {
       if (is.null(self$model)) {
         stopf("No model stored")
@@ -112,7 +111,7 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", inherit = Lea
       if (pars[["importance"]] == "none") return(message("importance was set to 'none'. No importance available."))
     },
 
-    #add method for oob_error, if learner supports that.
+    #add method for oob_error.
     oob_error = function() {
       mean(self$model$err.rate[, 1])
     }
