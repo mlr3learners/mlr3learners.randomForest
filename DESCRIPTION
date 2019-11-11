@@ -1,14 +1,20 @@
-Package: mlr3learnertemplate
-Title: Template for Adding New Learners to 'mlr3'
+Package: mlr3learners.randomForest
+Title: Random forest for mlr3 (randomForest package)
 Version: 0.1.0
 Authors@R:
-    c(person(given = "given.name",
-             family = "family.name",
-             role = "cre",
-             email = "email@email.com")
-      )
-Description: Template for adding new learners to 'mlr3'.
+    c(person(given = "Philipp",
+             family = "Kopper",
+             role = c("cre", "aut"),
+             email = "kopperphilipp@gmail.com"),
+      person(given = "Quay",
+             family = "Au",
+             role = "aut",
+             email = "quayau@gmail.com"))
+Description: Wrapper for a classification and regression learner from the
+  randomForest package (CRAN) to be used in mlr3.
 License: LGPL-3
+URL: https://github.com/mlr3learners,
+    https://github.com/mlr3learners/mlr3learners.earth
 Depends:
     R (>= 3.1.0)
 Imports:
@@ -20,8 +26,8 @@ Imports:
     R6
 Suggests:
     testthat,
-    rmarkdown,
-    randomForest
+    randomForest,
+    MASS
 Remotes:
     mlr-org/mlr3,
     mlr-org/mlr3misc,
