@@ -1,11 +1,10 @@
 #' @title Classification Random Forest Learner
 #'
-#' @aliases mlr_learners_classif.randomForest
-#' @format [R6::R6Class] inheriting from [LearnerClassif].
-#'
+#' @name mlr_learners_classif.randomForest
 #'
 #' @description
-#' A [LearnerClassif] for a classification random forest implemented in randomForest::randomForest()] in package \CRANpkg{randomForest}.
+#' A [mlr3::LearnerClassif] for a classification random from package \CRANpkg{randomForest}.
+#' Calls [randomForest::randomForest()].
 #'
 #' @references
 #' Breiman, L. (2001).
@@ -14,53 +13,86 @@
 #' \url{https://doi.org/10.1023/A:1010933404324}
 #'
 #' @export
-LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", inherit = LearnerClassif, 
+LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", # Adapt the name to your learner. For regression learners inherit = LearnerRegr.
+  inherit = LearnerClassif,
   public = list(
-    initialize = function(id = "classif.randomForest") { 
+    #' @description
+    #' Creates a new instance of this [R6][R6::R6Class] class.
+    initialize = function() {
+      ps = ParamSet$new( # parameter set using the paradox package
+        params = list(
+          ParamInt$new(id = "ntree", default = 500L, lower = 1L, tags = c("train", "predict")),
+          ParamInt$new(id = "mtry", lower = 1L, tags = "train"),
+          ParamLgl$new(id = "replace", default = TRUE, tags = "train"),
+          ParamUty$new(id = "classwt", default = NULL, tags = "train"), #lower = 0
+          ParamUty$new(id = "cutoff", tags = "train"),
+          ParamUty$new(id = "strata", tags = "train"),
+          ParamUty$new(id = "sampsize", tags = "train"),
+          ParamInt$new(id = "nodesize", default = 1L, lower = 1L, tags = "train"),
+          ParamInt$new(id = "maxnodes", lower = 1L, tags = "train"),
+          ParamFct$new(id = "importance", default = "none", levels = c("accuracy", "gini", "none"), tag = "train"), #importance is a logical value in the randomForest package.
+          ParamLgl$new(id = "localImp", default = FALSE, tags = "train"),
+          ParamLgl$new(id = "proximity", default = FALSE, tags = "train"),
+          ParamLgl$new(id = "oob.prox", tags = "train"),
+          ParamLgl$new(id = "norm.votes", default = TRUE, tags = "train"),
+          ParamLgl$new(id = "do.trace", default = FALSE, tags = "train"),
+          ParamLgl$new(id = "keep.forest", default = TRUE, tags = "train"),
+          ParamLgl$new(id = "keep.inbag", default = FALSE, tags = "train")
+        )
+      )
+
+      ps$values = list(importance = "none") # Change the defaults. We set this here, because the default is FALSE in the randomForest package.
+
       super$initialize(
-        id = id, 
-        packages = "randomForest", 
+        # see the mlr3book for a description: https://mlr3book.mlr-org.com/extending-mlr3.html
+        id = "classif.randomForest",
+        packages = "randomForest",
         feature_types = c("numeric", "factor", "ordered"),
-        predict_types = c("response", "prob"), 
-        param_set = ParamSet$new(
-          params = list(
-            ParamInt$new(id = "ntree", default = 500L, lower = 1L, tags = c("train", "predict")),
-            ParamInt$new(id = "mtry", lower = 1L, tags = "train"),
-            ParamLgl$new(id = "replace", default = TRUE, tags = "train"),
-            ParamUty$new(id = "classwt", default = NULL, tags = "train"), #lower = 0
-            ParamUty$new(id = "cutoff", tags = "train"), #lower = 0, upper = 1
-            ParamUty$new(id = "strata", tags = "train"),
-            ParamUty$new(id = "sampsize", tags = "train"), #lower = 1L
-            ParamInt$new(id = "nodesize", default = 1L, lower = 1L, tags = "train"),
-            ParamInt$new(id = "maxnodes", lower = 1L, tags = "train"),
-            ParamFct$new(id = "importance", default = "none", levels = c("accuracy", "gini", "none"), tag = "train"), #importance is a logical value in the randomForest package.
-            ParamLgl$new(id = "localImp", default = FALSE, tags = "train"),
-            ParamLgl$new(id = "proximity", default = FALSE, tags = "train"),
-            ParamLgl$new(id = "oob.prox", tags = "train"),
-            ParamLgl$new(id = "norm.votes", default = TRUE, tags = "train"),
-            ParamLgl$new(id = "do.trace", default = FALSE, tags = "train"),
-            ParamLgl$new(id = "keep.forest", default = TRUE, tags = "train"),
-            ParamLgl$new(id = "keep.inbag", default = FALSE, tags = "train")
-          )
-        ),
-        properties = c("weights", "twoclass", "multiclass", "importance", "oob_error") 
+        predict_types = c("response", "prob"),
+        param_set = ps,
+        properties = c("weights", "twoclass", "multiclass", "importance", "oob_error")
       )
     },
 
-    train_internal = function(task) {
-      if (is.null(self$param_set$values[["importance"]])) self$param_set$values[["importance"]] = "none"
+
+    #' @description
+    #' The importance scores are extracted from the slot `importance`.
+    #' Parameter 'importance' must be set to either `"accuracy"` or `"gini"`.
+    #' @return Named `numeric()`.
+    importance = function() {
+      if (is.null(self$model)) {
+        stopf("No model stored")
+      }
+      imp = data.frame(self$model$importance)
+      pars = self$param_set$get_values()
+
+      scores = switch(pars[["importance"]],
+        "accuracy" = imp[["MeanDecreaseAccuracy"]],
+        "gini"     = imp[["MeanDecreaseGini"]],
+        stop("No importance available. Try setting 'importance' to 'accuracy' or 'gini'")
+      )
+
+      sort(setNames(scores, rownames(imp)), decreasing = TRUE)
+    },
+
+    #' @description
+    #' OOB errors are extracted from the model slot `err.rate`.
+    #' @return `numeric(1)`.
+    oob_error = function() {
+      mean(self$model$err.rate[, 1L])
+    }
+  ),
+
+  private = list(
+    .train = function(task) {
       pars = self$param_set$get_values(tags = "train")
 
-      #setting the importance value to logical
-      if (pars[["importance"]] != "none") {
-        pars[["importance"]] = TRUE
-      } else {
-        pars[["importance"]] = FALSE
-      }
+      # Setting the importance value to logical
+      pars[["importance"]] = (pars[["importance"]] != "none")
 
-      #get formula, data, classwt, cutoff for the randomForest package
-      f = task$formula() 
-      data = task$data() 
+      # Get formula, data, classwt, cutoff for the randomForest
+      f = task$formula() #the formula is available in the task
+      data = task$data() #the data is avail
       levs = levels(data[[task$target_names]])
       n = length(levs)
 
@@ -78,42 +110,20 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", inherit = Lea
       invoke(randomForest::randomForest, formula = f, data = data, classwt = classwt, cutoff = cutoff, .args = pars)
     },
 
-    predict_internal = function(task) {
-      pars = self$param_set$get_values(tags = "predict") 
-      newdata = task$data(cols = task$feature_names) 
-      type = ifelse(self$predict_type == "response", "response", "prob")
+    .predict = function(task) {
+      pars = self$param_set$get_values(tags = "predict") # get parameters with tag "predict"
+      newdata = task$data(cols = task$feature_names) # get newdata
+      type = ifelse(self$predict_type == "response", "response", "prob") # this is for the randomForest package
 
       p = invoke(predict, self$model, newdata = newdata,
         type = type, .args = pars)
 
+      # Return a prediction object with PredictionClassif$new() or PredictionRegr$new()
       if (self$predict_type == "response") {
         PredictionClassif$new(task = task, response = p)
       } else {
         PredictionClassif$new(task = task, prob = p)
       }
-    },
-
-    #add method for importance.
-    importance = function() {
-      if (is.null(self$model)) {
-        stopf("No model stored")
-      }
-      imp = data.frame(self$model$importance)
-      pars = self$param_set$get_values()
-      if (pars[["importance"]] == "accuracy") {
-        x = setNames(imp[["MeanDecreaseAccuracy"]], rownames(imp))
-        return(sort(x, decreasing = TRUE))
-      }
-      if (pars[["importance"]] == "gini") {
-        x = setNames(imp[["MeanDecreaseGini"]], rownames(imp))
-        return(sort(x, decreasing = TRUE))
-      }
-      if (pars[["importance"]] == "none") return(message("importance was set to 'none'. No importance available."))
-    },
-
-    #add method for oob_error.
-    oob_error = function() {
-      mean(self$model$err.rate[, 1])
     }
   )
 )

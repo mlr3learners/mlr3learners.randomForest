@@ -23,7 +23,7 @@ test_that("Learner produces identical results as package version (multiclass, re
   prediction = learner$predict(task, row_ids = test_set)
   
   set.seed(20191111)
-  model = randomForest(x = Boston[train_set, task$feature_names], y = Boston$rad[train_set], ntree = 30L, importance = TRUE)
+  model = randomForest::randomForest(x = Boston[train_set, task$feature_names], y = Boston$rad[train_set], ntree = 30L, importance = TRUE)
   pred = predict(model, newdata = Boston[test_set, task$feature_names], type = "response")
   
   expect_true(all.equal(prediction$response, as.factor(unname(pred))))
@@ -45,7 +45,7 @@ test_that("Learner produces identical results as package version (multiclass, pr
   prediction = learner$predict(task, row_ids = test_set)
   
   set.seed(20191111)
-  model = randomForest(x = Boston[train_set, task$feature_names], y = Boston$rad[train_set], ntree = 30L, importance = TRUE)
+  model = randomForest::randomForest(x = Boston[train_set, task$feature_names], y = Boston$rad[train_set], ntree = 30L, importance = TRUE)
   pred = predict(model, newdata = Boston[test_set, task$feature_names], type = "prob")
   
   expect_true(all.equal(unname(prediction$prob), unname(pred)))
@@ -66,7 +66,7 @@ test_that("Learner produces identical results as package version (twoclass, resp
   prediction = learner$predict(task, row_ids = test_set)
   
   set.seed(20191111)
-  model = randomForest(x = Boston[train_set, task$feature_names], y = Boston$chas[train_set], ntree = 30L, importance = TRUE)
+  model = randomForest::randomForest(x = Boston[train_set, task$feature_names], y = Boston$chas[train_set], ntree = 30L, importance = TRUE)
   pred = predict(model, newdata = Boston[test_set, task$feature_names], type = "response")
   
   expect_true(all.equal(prediction$response, as.factor(unname(pred))))
@@ -88,7 +88,7 @@ test_that("Learner produces identical results as package version (twoclass, prob
   prediction = learner$predict(task, row_ids = test_set)
   
   set.seed(20191111)
-  model = randomForest(x = Boston[train_set, task$feature_names], y = Boston$chas[train_set], ntree = 30L, importance = TRUE)
+  model = randomForest::randomForest(x = Boston[train_set, task$feature_names], y = Boston$chas[train_set], ntree = 30L, importance = TRUE)
   pred = predict(model, newdata = Boston[test_set, task$feature_names], type = "prob")
   
   expect_true(all.equal(unname(prediction$prob), unname(pred)))

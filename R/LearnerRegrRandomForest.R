@@ -1,11 +1,10 @@
 #' @title Regression Random Forest Learner
 #'
 #' @aliases mlr_learners_regr.randomForest
-#' @format [R6::R6Class] inheriting from [LearnerRegr].
-#'
 #'
 #' @description
-#' A [LearnerRegr] for a regression random forest implemented in randomForest::randomForest()] in package \CRANpkg{randomForest}.
+#' A [mlr3::LearnerRegr] for a classification random from package \CRANpkg{randomForest}.
+#' Calls [randomForest::randomForest()].
 #'
 #' @references
 #' Breiman, L. (2001).
@@ -16,9 +15,11 @@
 #' @export
 LearnerRegrRandomForest = R6Class("LearnerRegrRandomForest", inherit = LearnerRegr,
   public = list(
-    initialize = function(id = "regr.randomForest") {
+    #' @description
+    #' Creates a new instance of this [R6][R6::R6Class] class.
+    initialize = function() {
       super$initialize(
-        id = id,
+        id = "regr.randomForest",
         packages = "randomForest",
         feature_types = c("numeric", "factor", "ordered"),
         predict_types = c("response"),
@@ -45,15 +46,42 @@ LearnerRegrRandomForest = R6Class("LearnerRegrRandomForest", inherit = LearnerRe
       )
     },
 
-    train_internal = function(task) {
+    #' @description
+    #' The importance scores are extracted from the slot `importance`.
+    #' Parameter 'importance' must be set to either `"mse"` or `"nodepurity"`.
+    #' @return Named `numeric()`.
+    importance = function() {
+      if (is.null(self$model)) {
+        stopf("No model stored")
+      }
+      imp = data.frame(self$model$importance)
+      colnames(imp)[colnames(imp) == "X.IncMSE"] = "%IncMSE"
+      ## correct for language error on special characters
+      pars = self$param_set$get_values()
+
+      scores = switch(pars[["importance"]],
+        "mse" = imp[["%IncMSE"]],
+        "nodepurity" = imp[["IncNodePurity"]],
+        stop("No importance available. Try setting 'importance' to 'accuracy' or 'gini'")
+      )
+
+      sort(setNames(scores, rownames(imp)), decreasing = TRUE)
+    },
+
+    #' @description
+    #' OOB errors are extracted from the model slot `mse`.
+    #' @return `numeric(1)`.
+    oob_error = function() {
+      mean(self$model$mse)
+    }
+  ),
+
+  private = list(
+    .train = function(task) {
       if (is.null(self$param_set$values[["importance"]])) self$param_set$values[["importance"]] = "none"
       pars = self$param_set$get_values()
       # setting the importance value to logical
-      if (pars[["importance"]] != "none") {
-        pars[["importance"]] = TRUE
-      } else {
-        pars[["importance"]] = FALSE
-      }
+      pars[["importance"]] = (pars[["importance"]] != "none")
 
       # get formula, data, classwt, cutoff for the randomForest package
       f = task$formula()
@@ -64,42 +92,15 @@ LearnerRegrRandomForest = R6Class("LearnerRegrRandomForest", inherit = LearnerRe
       invoke(randomForest::randomForest, formula = f, data = data, .args = pars)
     },
 
-    predict_internal = function(task) {
+    .predict = function(task) {
       pars = self$param_set$get_values(tags = "predict")
       newdata = task$data(cols = task$feature_names)
       type = self$predict_type
 
       p = invoke(predict, self$model, newdata = newdata,
                  type = type, .args = pars)
-      
+
       PredictionRegr$new(task = task, response = p)
-    },
-
-    # add method for importance.
-    importance = function() {
-      if (is.null(self$model)) {
-        stopf("No model stored")
-      }
-      imp = data.frame(self$model$importance)
-      colnames(imp)[colnames(imp) == "X.IncMSE"] = "%IncMSE"
-      ## correct for language error on special characters
-      pars = self$param_set$get_values()
-      if (pars[["importance"]] == "mse") {
-        x = setNames(imp[["%IncMSE"]], rownames(imp))
-        return(sort(x, decreasing = TRUE))
-      }
-      if (pars[["importance"]] == "nodepurity") {
-        x = setNames(imp[["IncNodePurity"]], rownames(imp))
-        return(sort(x, decreasing = TRUE))
-      }
-      if (pars[["importance"]] == "none") {
-        return(message("importance was set to 'none'. No importance available."))
-      }
-    },
-
-    # add method for oob_error.
-    oob_error = function() {
-      mean(self$model$mse)
     }
   )
 )

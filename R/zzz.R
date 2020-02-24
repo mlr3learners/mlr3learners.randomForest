@@ -5,8 +5,14 @@
 #' @importFrom mlr3 mlr_learners LearnerClassif LearnerRegr
 "_PACKAGE"
 
-register_mlr3 = function() {
+dummy_import = function() {
+  # R CMD check does not detect the usage of randomForest in R6 classes
+  # This function is a workaround to suppress check notes about
+  # "All declared imports should be used"
+  randomForest::randomForest()
+}
 
+register_mlr3 = function() {
   x = utils::getFromNamespace("mlr_learners", ns = "mlr3")
 
   x$add("classif.randomForest", LearnerClassifRandomForest)

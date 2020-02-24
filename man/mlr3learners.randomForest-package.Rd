@@ -13,7 +13,7 @@ Wrapper for a classification and regression learner from the
 Useful links:
 \itemize{
   \item \url{https://github.com/mlr3learners}
-  \item \url{https://github.com/mlr3learners/mlr3learners.earth}
+  \item \url{https://github.com/mlr3learners/mlr3learners.randomForest}
 }
 
 }

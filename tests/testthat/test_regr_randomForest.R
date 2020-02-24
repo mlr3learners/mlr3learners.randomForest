@@ -21,10 +21,10 @@ test_that("Learner produces identical results as package version.", {
   set.seed(20191111)
   learner$train(task, row_ids = train_set)
   prediction = learner$predict(task, row_ids = test_set)
-  
+
   set.seed(20191111)
-  model = randomForest(x = Boston[train_set, task$feature_names], y = Boston$crim[train_set], ntree = 30L, importance = TRUE)
+  model = randomForest::randomForest(x = Boston[train_set, task$feature_names], y = Boston$crim[train_set], ntree = 30L, importance = TRUE)
   pred = predict(model, newdata = Boston[test_set, task$feature_names], type = "response")
-  
+
   expect_true(all.equal(prediction$response, unname(pred)))
 })

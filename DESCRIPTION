@@ -15,24 +15,18 @@ Description: Wrapper for a classification and regression learner from the
 License: LGPL-3
 URL: https://github.com/mlr3learners,
     https://github.com/mlr3learners/mlr3learners.randomForest
-Depends:
-    R (>= 3.1.0)
 Imports:
-    checkmate,
     data.table,
-    mlr3,
+    mlr3 (>= 0.1.7),
     mlr3misc,
     paradox,
-    R6
+    R6,
+    randomForest
 Suggests:
+    checkmate,
     testthat,
-    randomForest,
     MASS
-Remotes:
-    mlr-org/mlr3,
-    mlr-org/mlr3misc,
-    mlr-org/paradox
 Encoding: UTF-8
 NeedsCompilation: no
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
