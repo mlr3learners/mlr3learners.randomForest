@@ -1,2 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^mlr3learners\.randomForest\.Rproj$
+^\.travis\.yml$
+^\.lintr$
+^\.vscode$
