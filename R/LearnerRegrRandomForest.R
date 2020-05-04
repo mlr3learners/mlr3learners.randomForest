@@ -33,8 +33,10 @@ LearnerRegrRandomForest = R6Class("LearnerRegrRandomForest",
             ParamInt$new(id = "nodesize", default = 5L, lower = 1L, tags = "train"),
             ParamInt$new(id = "maxnodes", lower = 1L, tags = "train"),
             ParamFct$new(
-              id = "importance", default = "none",
-              levels = c("mse", "nudepurity", "none"), tag = "train"), # importance is a logical value in the randomForest package.
+              id = "importance", default = FALSE,
+              levels = c("mse", "nudepurity", "none", FALSE),
+              special_vals = list(FALSE),
+              tag = "train"),
             ParamLgl$new(id = "localImp", default = FALSE, tags = "train"),
             ParamLgl$new(id = "proximity", default = FALSE, tags = c("train", "predict")),
             ParamLgl$new(id = "oob.prox", tags = "train"),

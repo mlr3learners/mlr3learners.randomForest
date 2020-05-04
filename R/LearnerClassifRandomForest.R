@@ -37,8 +37,10 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest",
             tags = "train"),
           ParamInt$new(id = "maxnodes", lower = 1L, tags = "train"),
           ParamFct$new(
-            id = "importance", default = "none",
-            levels = c("accuracy", "gini", "none"), tag = "train"),
+            id = "importance", default = FALSE,
+            levels = c("accuracy", "gini", "none", FALSE),
+            special_vals = list(FALSE),
+            tag = "train"),
           ParamLgl$new(id = "localImp", default = FALSE, tags = "train"),
           ParamLgl$new(id = "proximity", default = FALSE, tags = c("train", "predict")),
           ParamLgl$new(id = "oob.prox", tags = "train"),
@@ -50,8 +52,6 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest",
           ParamLgl$new(id = "nodes", default = FALSE, tags = "predict")
         )
       )
-
-      ps$values = list(importance = "none") # Change the defaults. We set this here, because the default is FALSE in the randomForest package.
 
       super$initialize(
         id = "classif.randomForest",
