@@ -1,20 +1,31 @@
-Package: mlr3learners.randomForest
+Package: mlr3learners.randomforest
 Title: Random forest for mlr3 (randomForest package)
-Version: 0.1.0
+Version: 0.1.0.9000
 Authors@R:
     c(person(given = "Philipp",
              family = "Kopper",
-             role = c("cre", "aut"),
+             role = "aut",
              email = "kopperphilipp@gmail.com"),
+      person(given = "Patrick",
+             family = "Schratz",
+             role = c("cre", "aut"),
+             email = "patrick.schratz@gmail.com",
+             comment = c(ORCID = "0000-0003-0748-6624")),
       person(given = "Quay",
              family = "Au",
              role = "aut",
              email = "quayau@gmail.com"))
-Description: Wrapper for a classification and regression learner from the
-  randomForest package (CRAN) to be used in mlr3.
+Description: Wrapper for a classification and regression learner
+    from the randomForest package (CRAN) to be used in mlr3.
 License: LGPL-3
 URL: https://github.com/mlr3learners,
-    https://github.com/mlr3learners/mlr3learners.randomForest
+    https://github.com/mlr3learners/mlr3learners.randomforest
+Encoding: UTF-8
+NeedsCompilation: no
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.0
+Depends:
+    R (>= 3.1.0)
 Imports:
     data.table,
     mlr3 (>= 0.1.7),
@@ -24,9 +35,4 @@ Imports:
     randomForest
 Suggests:
     checkmate,
-    testthat,
-    MASS
-Encoding: UTF-8
-NeedsCompilation: no
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.0.2
+    testthat

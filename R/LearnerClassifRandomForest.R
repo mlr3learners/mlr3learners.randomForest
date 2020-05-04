@@ -3,8 +3,8 @@
 #' @name mlr_learners_classif.randomForest
 #'
 #' @description
-#' A [mlr3::LearnerClassif] for a classification random from package \CRANpkg{randomForest}.
-#' Calls [randomForest::randomForest()].
+#' Random forest learner.
+#' \CRANpkg{randomForest} from package {randomForest}.
 #'
 #' @references
 #' Breiman, L. (2001).
@@ -13,44 +13,54 @@
 #' \url{https://doi.org/10.1023/A:1010933404324}
 #'
 #' @export
-LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", # Adapt the name to your learner. For regression learners inherit = LearnerRegr.
+LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest",
   inherit = LearnerClassif,
+
   public = list(
+
     #' @description
     #' Creates a new instance of this [R6][R6::R6Class] class.
     initialize = function() {
-      ps = ParamSet$new( # parameter set using the paradox package
+      ps = ParamSet$new(
         params = list(
-          ParamInt$new(id = "ntree", default = 500L, lower = 1L, tags = c("train", "predict")),
+          ParamInt$new(
+            id = "ntree", default = 500L, lower = 1L,
+            tags = c("train", "predict")),
           ParamInt$new(id = "mtry", lower = 1L, tags = "train"),
           ParamLgl$new(id = "replace", default = TRUE, tags = "train"),
-          ParamUty$new(id = "classwt", default = NULL, tags = "train"), #lower = 0
+          ParamUty$new(id = "classwt", default = NULL, tags = "train"),
           ParamUty$new(id = "cutoff", tags = "train"),
           ParamUty$new(id = "strata", tags = "train"),
           ParamUty$new(id = "sampsize", tags = "train"),
-          ParamInt$new(id = "nodesize", default = 1L, lower = 1L, tags = "train"),
+          ParamInt$new(
+            id = "nodesize", default = 1L, lower = 1L,
+            tags = "train"),
           ParamInt$new(id = "maxnodes", lower = 1L, tags = "train"),
-          ParamFct$new(id = "importance", default = "none", levels = c("accuracy", "gini", "none"), tag = "train"), #importance is a logical value in the randomForest package.
+          ParamFct$new(
+            id = "importance", default = "none",
+            levels = c("accuracy", "gini", "none"), tag = "train"),
           ParamLgl$new(id = "localImp", default = FALSE, tags = "train"),
-          ParamLgl$new(id = "proximity", default = FALSE, tags = "train"),
+          ParamLgl$new(id = "proximity", default = FALSE, tags = c("train", "predict")),
           ParamLgl$new(id = "oob.prox", tags = "train"),
           ParamLgl$new(id = "norm.votes", default = TRUE, tags = "train"),
           ParamLgl$new(id = "do.trace", default = FALSE, tags = "train"),
           ParamLgl$new(id = "keep.forest", default = TRUE, tags = "train"),
-          ParamLgl$new(id = "keep.inbag", default = FALSE, tags = "train")
+          ParamLgl$new(id = "keep.inbag", default = FALSE, tags = "train"),
+          ParamLgl$new(id = "predict.all", default = FALSE, tags = "predict"),
+          ParamLgl$new(id = "nodes", default = FALSE, tags = "predict")
         )
       )
 
       ps$values = list(importance = "none") # Change the defaults. We set this here, because the default is FALSE in the randomForest package.
 
       super$initialize(
-        # see the mlr3book for a description: https://mlr3book.mlr-org.com/extending-mlr3.html
         id = "classif.randomForest",
         packages = "randomForest",
         feature_types = c("numeric", "factor", "ordered"),
         predict_types = c("response", "prob"),
         param_set = ps,
-        properties = c("weights", "twoclass", "multiclass", "importance", "oob_error")
+        properties = c("weights", "twoclass", "multiclass", "importance", "oob_error"),
+        man = "mlr3learners.randomforest::mlr_learners_classif.randomForest"
       )
     },
 
@@ -84,45 +94,55 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest", # Adapt the n
   ),
 
   private = list(
+
     .train = function(task) {
+
       pars = self$param_set$get_values(tags = "train")
 
       # Setting the importance value to logical
       pars[["importance"]] = (pars[["importance"]] != "none")
 
       # Get formula, data, classwt, cutoff for the randomForest
-      f = task$formula() #the formula is available in the task
-      data = task$data() #the data is avail
+      formula = task$formula() # the formula is available in the task
+      data = task$data() # the data is avail
       levs = levels(data[[task$target_names]])
-      n = length(levs)
+      n_levels = length(levs)
 
-      if (!"cutoff" %in% names(pars))
-        cutoff = rep(1 / n, n)
+      if (!"cutoff" %in% names(pars)) {
+        cutoff = rep(1 / n_levels, n_levels)
+      }
       if ("classwt" %in% names(pars)) {
         classwt = pars[["classwt"]]
-        if (is.numeric(classwt) && length(classwt) == n && is.null(names(classwt)))
+        if (is.numeric(classwt) && length(classwt) == n_levels &&
+          is.null(names(classwt))) {
           names(classwt) = levs
+        }
       } else {
         classwt = NULL
       }
-      if (is.numeric(cutoff) && length(cutoff) == n && is.null(names(cutoff)))
+      if (is.numeric(cutoff) && length(cutoff) == n_levels &&
+        is.null(names(cutoff))) {
         names(cutoff) = levs
-      invoke(randomForest::randomForest, formula = f, data = data, classwt = classwt, cutoff = cutoff, .args = pars)
+      }
+      mlr3misc::invoke(randomForest::randomForest,
+        formula = formula,
+        data = data, classwt = classwt, cutoff = cutoff, .args = pars)
     },
 
     .predict = function(task) {
-      pars = self$param_set$get_values(tags = "predict") # get parameters with tag "predict"
-      newdata = task$data(cols = task$feature_names) # get newdata
-      type = ifelse(self$predict_type == "response", "response", "prob") # this is for the randomForest package
 
-      p = invoke(predict, self$model, newdata = newdata,
+      pars = self$param_set$get_values(tags = "predict")
+      newdata = task$data(cols = task$feature_names)
+      type = ifelse(self$predict_type == "response", "response", "prob")
+
+      pred = mlr3misc::invoke(predict, self$model,
+        newdata = newdata,
         type = type, .args = pars)
 
-      # Return a prediction object with PredictionClassif$new() or PredictionRegr$new()
       if (self$predict_type == "response") {
-        PredictionClassif$new(task = task, response = p)
+        PredictionClassif$new(task = task, response = pred)
       } else {
-        PredictionClassif$new(task = task, prob = p)
+        PredictionClassif$new(task = task, prob = pred)
       }
     }
   )

@@ -1,6 +1,4 @@
 library(testthat)
-library(mlr3learners.randomForest)
-library(randomForest)
-library(MASS)
+library(mlr3learners.randomforest)
 
 test_check("mlr3")
