@@ -103,6 +103,12 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest",
       levs = levels(data[[task$target_names]])
       n_levels = length(levs)
 
+      # randomForest() only accepts TRUE and FALSE during fitting and the
+      # specific importance methods are honored post-fitting only
+      if (!is.null(pars$importance)) {
+        pars$importance = TRUE
+      }
+
       if (!"cutoff" %in% names(pars)) {
         cutoff = rep(1 / n_levels, n_levels)
       }

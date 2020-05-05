@@ -98,6 +98,12 @@ LearnerRegrRandomForest = R6Class("LearnerRegrRandomForest",
       formula = task$formula()
       data = task$data()
 
+      # randomForest() only accepts TRUE and FALSE during fitting and the
+      # specific importance methods are honored post-fitting only
+      if (!is.null(pars$importance)) {
+        pars$importance = TRUE
+      }
+
       mlr3misc::invoke(randomForest::randomForest,
         formula = formula,
         data = data, .args = pars)
