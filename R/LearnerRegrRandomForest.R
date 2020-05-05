@@ -76,7 +76,7 @@ LearnerRegrRandomForest = R6Class("LearnerRegrRandomForest",
       scores = switch(pars[["importance"]],
         "mse" = imp[["%IncMSE"]],
         "nodepurity" = imp[["IncNodePurity"]],
-        stop("No importance available. Try setting 'importance' to 'accuracy' or 'gini'")
+        stop("No importance available. Try setting 'importance' to 'mse' or 'nodepurity'.")
       )
 
       sort(setNames(scores, rownames(imp)), decreasing = TRUE)
@@ -94,14 +94,7 @@ LearnerRegrRandomForest = R6Class("LearnerRegrRandomForest",
 
     .train = function(task) {
 
-      if (is.null(self$param_set$values[["importance"]])) {
-        self$param_set$values[["importance"]] = "none"
-      }
-      pars = self$param_set$get_values()
-      # setting the importance value to logical
-      pars[["importance"]] = (pars[["importance"]] != "none")
-
-      # get formula, data, classwt, cutoff for the randomForest package
+      pars = self$param_set$get_values(tags = "train")
       formula = task$formula()
       data = task$data()
 

@@ -79,7 +79,7 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest",
       scores = switch(pars[["importance"]],
         "accuracy" = imp[["MeanDecreaseAccuracy"]],
         "gini"     = imp[["MeanDecreaseGini"]],
-        stop("No importance available. Try setting 'importance' to 'accuracy' or 'gini'")
+        stop("No importance available. Try setting 'importance' to 'accuracy' or 'gini'.")
       )
 
       sort(setNames(scores, rownames(imp)), decreasing = TRUE)
@@ -94,17 +94,12 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest",
   ),
 
   private = list(
-
     .train = function(task) {
 
       pars = self$param_set$get_values(tags = "train")
 
-      # Setting the importance value to logical
-      pars[["importance"]] = (pars[["importance"]] != "none")
-
-      # Get formula, data, classwt, cutoff for the randomForest
-      formula = task$formula() # the formula is available in the task
-      data = task$data() # the data is avail
+      formula = task$formula()
+      data = task$data()
       levs = levels(data[[task$target_names]])
       n_levels = length(levs)
 
@@ -130,7 +125,6 @@ LearnerClassifRandomForest = R6Class("LearnerClassifRandomForest",
     },
 
     .predict = function(task) {
-
       pars = self$param_set$get_values(tags = "predict")
       newdata = task$data(cols = task$feature_names)
       type = ifelse(self$predict_type == "response", "response", "prob")
