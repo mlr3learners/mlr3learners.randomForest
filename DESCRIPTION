@@ -1,6 +1,6 @@
 Package: mlr3learners.randomforest
 Title: Random forest for mlr3 (randomForest package)
-Version: 0.1.1.9000
+Version: 0.1.2
 Authors@R:
     c(person(given = "Philipp",
              family = "Kopper",
